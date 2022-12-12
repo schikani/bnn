@@ -65,9 +65,19 @@ bnn_data_t *bnn_utils_new_data(size_t n_inp, size_t n_out, size_t n_rows)
 void bnn_utils_parse(bnn_data_t *bnn_data, char *line, size_t row, const char *sep)
 {
     size_t n_cols = bnn_data->n_inp + bnn_data->n_out;
+    char *t;
     for (size_t col = 0; col < n_cols; col++)
     {
-        const double val = (double)(atof(strtok(col == 0 ? line: NULL, sep)));
+        char *token = strtok(col == 0 ? line: NULL, sep);
+//        const double val = (double)(atof(token));
+        const double val = strtod(token, &t);
+        if (token == t)
+        {
+            printf("%s\n", t);
+        }
+        else
+            printf("%lf\n", val);
+
         if (col < bnn_data->n_inp)
             bnn_data->inp[row][col] = val;
         else

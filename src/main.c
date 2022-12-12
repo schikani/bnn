@@ -22,12 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "full_adder.h"
+//#include "full_adder.h"
+#include "cars.h"
 
 int main(int argc, char *argv[])
 {
-    full_adder_train();
-    full_adder_predict();
+//    full_adder_train();
+//    full_adder_predict();
+    get_cars_data();
 
     return 0;
 }
