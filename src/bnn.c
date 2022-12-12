@@ -24,133 +24,43 @@ SOFTWARE.
 
 #include "bnn.h"
 
-// STATIC FUNCTION DEFINITIONS
 // ---------------------------------------------------------------------------------------------------------------------
-static val_t bnn_random_double(void);
-static void bnn_shuffle(bnn_t *bnn);
-static void bnn_update_weights(bnn_t *bnn, val_t l_rate, bool log);
-static void bnn_init_random_weights_and_biases(bnn_t *bnn, bool log);
-static void bnn_compute_cost(bnn_t *bnn, size_t idx_sample, bool log);
-// ---------------------------------------------------------------------------------------------------------------------
+// NEURON
 
-
-// ---------------------------------------------------------------------------------------------------------------------
-// STATIC FUNCTION IMPLEMENTATION
-
-static val_t bnn_random_double(void)
+bnn_neuron_t bnn_create_neuron(size_t n_weights)
 {
-    return ((val_t) rand()) / ((val_t) RAND_MAX);
-}
+    bnn_neuron_t neuron;
 
-static void bnn_shuffle(bnn_t *bnn)
-{
-    for (size_t a = 0; a < bnn->n_samples; a++)
-    {
-        size_t b = rand() % bnn->n_samples;
-        double *ot = bnn->outputs[a];
-        double *it = bnn->inputs[a];
+    neuron.val = 0.0f;
+    neuron.out_w = (double *)calloc(n_weights, sizeof(double));
+    neuron.bias = 0.0f;
+    neuron.z = 0.0f;
 
-        bnn->outputs[a] = bnn->outputs[b];
-        bnn->outputs[b] = ot;
+    neuron.d_val = 0.0f;
+    neuron.d_w = (double *)calloc(n_weights, sizeof(double));
+    neuron.d_bias = 0.0f;
+    neuron.d_z = 0.0f;
 
-        bnn->inputs[a] = bnn->inputs[b];
-        bnn->inputs[b] = it;
-    }
-}
-
-static void bnn_update_weights(bnn_t *bnn, val_t l_rate, bool log)
-{
-    if (log)
-        printf("Updating weights!\n");
-
-    for (size_t l = 0; l < bnn->n_layers-1; l++)
-    {
-        for (size_t n = 0; n < bnn->n_neu_per_layer[l]; n++)
-        {
-            for (size_t i = 0; i < bnn->n_neu_per_layer[l+1]; i++)
-            {
-                // Update weights
-                bnn->layers[l].neurons[n].out_w[i] = (bnn->layers[l].neurons[n].out_w[i] - (l_rate * bnn->layers[l].neurons[n].d_w[i]));
-                if (log)
-                    printf("Layer: %zu\nNeuron: %zu\nWeight: %lf\n", l, n, bnn->layers[l].neurons[n].out_w[i]);
-            }
-
-            // Update Bias
-            bnn->layers[l].neurons[n].bias = bnn->layers[l].neurons[n].bias - (l_rate * bnn->layers[l].neurons[n].d_bias);
-            if (log)
-                printf("Layer: %zu | Bias: %lf\n", l, bnn->layers[l].neurons[n].bias);
-        }
-    }
-}
-
-static void bnn_init_random_weights_and_biases(bnn_t *bnn, bool log)
-{
-
-//    srand(time(NULL));
-
-    if (log)
-        printf("\n");
-
-    for(size_t l = 0; l < bnn->n_layers - 1; l++)
-    {
-        if (log)
-            printf("LAYER: %zu\n", l+1);
-        for (size_t n = 0; n < bnn->n_neu_per_layer[l]; n++)
-        {
-            for (size_t i = 0; i < bnn->n_neu_per_layer[l+1]; i++)
-            {
-                // Init output weights for each neuron
-                bnn->layers[l].neurons[n].out_w[i] = bnn_random_double();
-                if (log)
-                    printf("%zu:w[%zu][%zu]: %f\n", i, l, n, bnn->layers[l].neurons[n].out_w[i]);
-                bnn->layers[l].neurons[n].d_w[i] = 0.0f;
-            }
-
-            // If the layer is not input, init biases
-            if (l > 0)
-            {
-                bnn->layers[l].neurons[n].bias = bnn_random_double();
-            }
-        }
-        if (log)
-            printf("\n");
-    }
-
-    // Init output layer biases
-    for (size_t n = 0; n < bnn->n_neu_per_layer[bnn->n_layers - 1]; n++)
-    {
-        bnn->layers[bnn->n_layers - 1].neurons[n].bias = bnn_random_double();
-    }
-}
-
-static void bnn_compute_cost(bnn_t *bnn, size_t idx_sample, bool log)
-{
-    val_t tmp_cost;
-    val_t total_cost = 0.0f;
-
-    val_t total_error = 0.0f;
-
-
-    // Output Array
-    for (size_t n = 0; n < bnn->n_out; n++)
-    {
-        tmp_cost = bnn->outputs[idx_sample][n] - bnn->layers[bnn->n_layers - 1].neurons[n].val;
-        bnn->cost[n] = (tmp_cost * tmp_cost) / 2;
-        total_cost += bnn->cost[n];
-        total_error += fabs(tmp_cost);
-    }
-
-//    bnn->full_cost = (bnn->full_cost + total_cost) / compute_cost_n;
-    bnn->full_cost = (bnn->full_cost + total_cost) / 2;
-
-
-    if (log)
-    {
-        printf("Error: %.1lf %%\n", total_error * 100.0f / (val_t)bnn->n_out);
-        printf("Cost: %lf\n", bnn->full_cost);
-    }
+    return neuron;
 }
 // ---------------------------------------------------------------------------------------------------------------------
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+// LAYER
+
+bnn_layer_t bnn_create_layer(size_t n_neurons)
+{
+    bnn_layer_t layer;
+
+    layer.n_neurons = n_neurons;
+    layer.neurons = (bnn_neuron_t *)calloc(n_neurons, sizeof(bnn_neuron_t));
+
+    return layer;
+}
+// ---------------------------------------------------------------------------------------------------------------------
+
+
 
 // ---------------------------------------------------------------------------------------------------------------------
 // ACTIVATION FUNCTIONS
@@ -180,6 +90,87 @@ val_t bnn_activation_linear(val_t a)
     return a;
 }
 // ---------------------------------------------------------------------------------------------------------------------
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+val_t bnn_random_double(void)
+{
+    val_t r = ((val_t) rand()) / ((val_t) RAND_MAX);
+    return r;
+}
+
+void bnn_shuffle(bnn_t *bnn)
+{
+    for (size_t a = 0; a < bnn->n_samples; a++)
+    {
+        size_t b = rand() % bnn->n_samples;
+        double *ot = bnn->outputs[a];
+        double *it = bnn->inputs[a];
+
+        bnn->outputs[a] = bnn->outputs[b];
+        bnn->outputs[b] = ot;
+
+        bnn->inputs[a] = bnn->inputs[b];
+        bnn->inputs[b] = it;
+    }
+}
+
+void bnn_update_weights(bnn_t *bnn, val_t l_rate, bool log)
+{
+    if (log)
+        printf("Updating weights!\n");
+
+    for (size_t l = 0; l < bnn->n_layers-1; l++)
+    {
+        for (size_t n = 0; n < bnn->n_neu_per_layer[l]; n++)
+        {
+            for (size_t i = 0; i < bnn->n_neu_per_layer[l+1]; i++)
+            {
+                // Update weights
+                bnn->layers[l].neurons[n].out_w[i] = (bnn->layers[l].neurons[n].out_w[i] - (l_rate * bnn->layers[l].neurons[n].d_w[i]));
+                if (log)
+                    printf("Layer: %zu\nNeuron: %zu\nWeight: %lf\n", l, n, bnn->layers[l].neurons[n].out_w[i]);
+            }
+
+            // Update Bias
+            bnn->layers[l].neurons[n].bias = bnn->layers[l].neurons[n].bias - (l_rate * bnn->layers[l].neurons[n].d_bias);
+            if (log)
+                printf("Layer: %zu | Bias: %lf\n", l, bnn->layers[l].neurons[n].bias);
+        }
+    }
+}
+
+
+void bnn_compute_cost(bnn_t *bnn, size_t idx_sample, bool log)
+{
+    val_t tmp_cost;
+    val_t total_cost = 0.0f;
+
+    val_t total_error = 0.0f;
+
+
+    // Output Array
+    for (size_t n = 0; n < bnn->n_out; n++)
+    {
+        tmp_cost = bnn->outputs[idx_sample][n] - bnn->layers[bnn->n_layers - 1].neurons[n].val;
+        bnn->cost[n] = (tmp_cost * tmp_cost) / 2;
+        total_cost += bnn->cost[n];
+        total_error += fabs(tmp_cost);
+    }
+
+//    bnn->full_cost = (bnn->full_cost + total_cost) / compute_cost_n;
+    bnn->full_cost = (bnn->full_cost + total_cost) / 2;
+
+
+    if (log)
+    {
+        printf("Error:       %.3lf %%\n", total_error * 100.0f / (val_t)bnn->n_out);
+        printf("Cost:        %.4lf\n", bnn->full_cost);
+    }
+}
+// ---------------------------------------------------------------------------------------------------------------------
+
 
 
 
@@ -243,10 +234,50 @@ bnn_t bnn_init(size_t n_layers, size_t *n_neu_per_layer, size_t n_samples, bool 
     return bnn;
 }
 
+void bnn_init_random_weights_and_biases(bnn_t *bnn, bool log)
+{
+
+//    srand(time(NULL));
+
+    if (log)
+        printf("\n");
+
+    for(size_t l = 0; l < bnn->n_layers - 1; l++)
+    {
+        if (log)
+            printf("LAYER: %zu\n", l+1);
+        for (size_t n = 0; n < bnn->n_neu_per_layer[l]; n++)
+        {
+            for (size_t i = 0; i < bnn->n_neu_per_layer[l+1]; i++)
+            {
+                // Init output weights for each neuron
+                bnn->layers[l].neurons[n].out_w[i] = bnn_random_double();
+                if (log)
+                    printf("%zu:w[%zu][%zu]: %f\n", i, l, n, bnn->layers[l].neurons[n].out_w[i]);
+                bnn->layers[l].neurons[n].d_w[i] = 0.0f;
+            }
+
+            // If the layer is not input, init biases
+            if (l > 0)
+            {
+                bnn->layers[l].neurons[n].bias = bnn_random_double();
+            }
+        }
+        if (log)
+            printf("\n");
+    }
+
+    // Init output layer biases
+    for (size_t n = 0; n < bnn->n_neu_per_layer[bnn->n_layers - 1]; n++)
+    {
+        bnn->layers[bnn->n_layers - 1].neurons[n].bias = bnn_random_double();
+    }
+}
+
 val_t *bnn_feed_input(bnn_t *bnn, size_t idx_sample, bool log)
 {
     if (log)
-        printf("Input: ");
+        printf("Given Input: ");
 
     // To use later in the project (currently unused)
     bnn->inp_current = bnn->inputs[idx_sample];
@@ -256,7 +287,7 @@ val_t *bnn_feed_input(bnn_t *bnn, size_t idx_sample, bool log)
         bnn->layers[0].neurons[i].val = bnn->inp_current[i];
         if (log)
         {
-            printf("%lf ", bnn->layers[0].neurons[i].val);
+            printf("%.3lf ", bnn->layers[0].neurons[i].val);
         }
     }
     if (log)
@@ -271,14 +302,13 @@ int bnn_forward_propogation(bnn_t *bnn, bool log)
 {
 
     if (log)
-        printf("Output: ");
+        printf("Pred Output: ");
 
     for (size_t l = 1; l < bnn->n_layers; l++)
     {
 
         for (size_t n = 0; n < bnn->n_neu_per_layer[l]; n++)
         {
-//        printf("qwerty\n");
             bnn->layers[l].neurons[n].z = bnn->layers[l].neurons[n].bias;
 
             // Exclude output
@@ -303,7 +333,7 @@ int bnn_forward_propogation(bnn_t *bnn, bool log)
 
                 if (log)
                 {
-                    printf("%.2lf ", bnn->pred_val[n]);
+                    printf("%.3lf ", bnn->pred_val[n]);
 //                    printf("%d ", (int)round(bnn->layers[l].neurons[n].val));
 
                 }
@@ -324,6 +354,7 @@ void bnn_back_propogation(bnn_t *bnn, size_t idx_sample, bool log)
    //  bnn->n_neu_per_layer[bnn->n_layers - 1]
     for (size_t n = 0; n < bnn->n_out; n++)
     {
+//        printf("%lf ", bnn->outputs[idx_sample][n]);
         bnn->layers[bnn->n_layers-1].neurons[n].d_z = (bnn->layers[bnn->n_layers-1].neurons[n].val - bnn->outputs[idx_sample][n])
                 * (bnn->layers[bnn->n_layers-1].neurons[n].val)
                 * (1 - bnn->layers[bnn->n_layers-1].neurons[n].val);
@@ -335,6 +366,7 @@ void bnn_back_propogation(bnn_t *bnn, size_t idx_sample, bool log)
         }
         bnn->layers[bnn->n_layers-1].neurons[n].d_bias = bnn->layers[bnn->n_layers-1].neurons[n].d_z;
     }
+//    printf("\n");
 
     // Hidden Layers
     for (size_t l = bnn->n_layers-2; l > 0; l--)
@@ -364,6 +396,15 @@ void bnn_train_once(bnn_t *bnn, val_t l_rate, bool log)
     for (size_t i = 0; i < bnn->n_samples; i++)
     {
         bnn_feed_input(bnn, i, log);
+        if (log)
+        {
+            printf("Real Output: ");
+            for (size_t o = 0; o < bnn->n_out; o++)
+            {
+                printf("%.3lf ", bnn->outputs[i][o]);
+            }
+            printf("\n");
+        }
         bnn_forward_propogation(bnn, log);
         bnn_compute_cost(bnn, i, log);
         bnn_back_propogation(bnn, i, false);
@@ -378,8 +419,8 @@ void bnn_train_once(bnn_t *bnn, val_t l_rate, bool log)
 // Train the Neural Network
 void bnn_train(bnn_t *bnn, size_t iterations, val_t l_rate, bool log)
 {
-    // Initialize weights and biases
-    bnn_init_random_weights_and_biases(bnn, log);
+//    // Initialize weights and biases
+//    bnn_init_random_weights_and_biases(bnn, log);
 
     if (log)
         printf("TRAINING STARTED!\n");
@@ -387,7 +428,12 @@ void bnn_train(bnn_t *bnn, size_t iterations, val_t l_rate, bool log)
     for (size_t it = 0; it < iterations; it++)
     {
         if (log)
-            printf("ITERATION: %zu / %zu\r", it + 1, iterations);
+        {
+            printf("-------------------------------------------------\n");
+            printf("|\t\t\tITERATION: %zu / %zu\t\t\t|\n", it + 1, iterations);
+            printf("-------------------------------------------------\n");
+
+        }
 
         bnn_train_once(bnn, l_rate, log);
     }
@@ -399,8 +445,8 @@ void bnn_train(bnn_t *bnn, size_t iterations, val_t l_rate, bool log)
 void bnn_shuffle_train(bnn_t *bnn, size_t iterations, val_t l_rate, bool log)
 {
 
-    // Initialize weights and biases
-    bnn_init_random_weights_and_biases(bnn, log);
+//    // Initialize weights and biases
+//    bnn_init_random_weights_and_biases(bnn, log);
 
     if (log)
         printf("\nTRAINING STARTED!\n\n");
@@ -408,7 +454,11 @@ void bnn_shuffle_train(bnn_t *bnn, size_t iterations, val_t l_rate, bool log)
     for (size_t it = 0; it < iterations; it++)
     {
         if (log)
-            printf("ITERATION: %zu / %zu\n", it + 1, iterations);
+        {
+            printf("-------------------------------------------------\n");
+            printf("\t\t\tITERATION: %zu / %zu\n", it + 1, iterations);
+            printf("-------------------------------------------------\n\n");
+        }
 
         bnn_shuffle(bnn);
 
@@ -419,17 +469,17 @@ void bnn_shuffle_train(bnn_t *bnn, size_t iterations, val_t l_rate, bool log)
         printf("TRAINING ENDED!\n\n");
 }
 
-int bnn_add_example(bnn_t *bnn, val_t *input, val_t *output, bool log)
+int bnn_add_example(bnn_t *bnn, val_t *input, val_t *output, size_t idx_sample, bool log)
 {
-    static int idx_current_sample = -1;
-    idx_current_sample++;
+//    static int idx_current_sample = -1;
+//    idx_current_sample++;
 
-    memcpy(bnn->inputs[idx_current_sample], input, sizeof(val_t) * bnn->n_inp);
-    memcpy(bnn->outputs[idx_current_sample], output, sizeof(val_t) * bnn->n_out);
+    memcpy(bnn->inputs[idx_sample], input, sizeof(val_t) * bnn->n_inp);
+    memcpy(bnn->outputs[idx_sample], output, sizeof(val_t) * bnn->n_out);
 
     if (log)
     {
-        printf("Sample added at index: %d\n", idx_current_sample);
+        printf("Sample added at index: %zu\n", idx_sample);
     }
 
 
@@ -443,8 +493,8 @@ val_t *bnn_predict(bnn_t *bnn, const val_t *input, bool log)
     memcpy(bnn->inputs[0], input, sizeof(val_t) * bnn->n_inp);
 
     bnn_feed_input(bnn, 0, log);
-    if (log)
-        printf("Predicted ");
+//    if (log)
+//        printf("Predicted ");
     bnn_forward_propogation(bnn, log);
 
     return bnn->pred_val;

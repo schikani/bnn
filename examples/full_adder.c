@@ -46,47 +46,20 @@ int full_adder_train()
     n_neu_per_layer[4] = n_out;
 
     bnn_t bnn = bnn_init(n_layers, n_neu_per_layer, n_samples, false);
+    bnn_init_random_weights_and_biases(&bnn, true);
 
-    val_t inputs[n_samples][n_inp] = {
-            {0.0f, 0.0f, 0.0f}, // 0 0 0 = 0 0
-            {0.0f, 0.0f, 0.0f}, // 0 0 0 = 0 0
-            {0.0f, 0.0f, 0.0f}, // 0 0 0 = 0 0
-            {0.0f, 0.0f, 1.0f}, // 0 0 1 = 1 0
-            {0.0f, 1.0f, 0.0f}, // 0 1 0 = 1 0
-            {0.0f, 1.0f, 1.0f}, // 0 1 1 = 0 1
-            {1.0f, 0.0f, 0.0f}, // 1 0 0 = 1 0
-            {1.0f, 0.0f, 1.0f}, // 1 0 1 = 0 1
-            {1.0f, 1.0f, 0.0f}, // 1 1 0 = 0 1
-            {1.0f, 1.0f, 1.0f}, // 1 1 1 = 1 1
-            {1.0f, 1.0f, 1.0f}, // 1 1 1 = 1 1
-            {1.0f, 1.0f, 1.0f}  // 1 1 1 = 1 1
-    };
-
-    val_t outputs[n_samples][n_out] = {
-            {0.0f, 0.0f},
-            {0.0f, 0.0f},
-            {0.0f, 0.0f},
-            {1.0f, 0.0f},
-            {1.0f, 0.0f},
-            {0.0f, 1.0f},
-            {1.0f, 0.0f},
-            {0.0f, 1.0f},
-            {0.0f, 1.0f},
-            {1.0f, 1.0f},
-            {1.0f, 1.0f},
-            {1.0f, 1.0f}
-    };
+    bnn_data_t *bnn_data = bnn_utils_build("../data/full_adder.csv", n_inp, n_out, ",");
+    bnn_utils_shuffle(bnn_data);
 
 
     for (size_t s = 0; s < n_samples; s++)
     {
-        bnn_add_example(&bnn, inputs[s], outputs[s], true);
+        bnn_add_example(&bnn, bnn_data->inp[s], bnn_data->out[s], s, true);
     }
 
 
     bnn_shuffle_train(&bnn, iterations, l_rate, true);
-    bnn_save(&bnn, "../model.bnn", true);
-
+    bnn_save(&bnn, "../full_adder_model.bnn", true);
     bnn_free(&bnn);
 
     return 0;
@@ -94,8 +67,8 @@ int full_adder_train()
 
 int full_adder_predict()
 {
-    bnn_t bnn = bnn_load("../model.bnn", false);
-    val_t input[] = {1, 1, 1};
+    bnn_t bnn = bnn_load("../full_adder_model.bnn", false);
+    val_t input[] = {1, 0, 1};
 
     bnn_predict(&bnn, input, true);
 

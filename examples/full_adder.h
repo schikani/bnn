@@ -26,6 +26,7 @@ SOFTWARE.
 #define BNN_FULL_ADDER_H
 
 #include "bnn.h"
+#include "bnn_utils.h"
 
 int full_adder_train();
 int full_adder_predict();

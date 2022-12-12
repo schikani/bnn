@@ -24,7 +24,7 @@ SOFTWARE.
 
 #include "full_adder.h"
 
-int main()
+int main(int argc, char *argv[])
 {
     full_adder_train();
     full_adder_predict();
