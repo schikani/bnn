@@ -59,7 +59,7 @@ int full_adder_train()
 
 
     bnn_shuffle_train(&bnn, iterations, l_rate, true);
-    bnn_save(&bnn, "../full_adder_model.bnn", true);
+    bnn_save(&bnn, "../models/full_adder_model.bnn", true);
     bnn_free(&bnn);
 
     return 0;
@@ -67,7 +67,7 @@ int full_adder_train()
 
 int full_adder_predict()
 {
-    bnn_t bnn = bnn_load("../full_adder_model.bnn", false);
+    bnn_t bnn = bnn_load("../models/full_adder_model.bnn", false);
     val_t input[] = {1, 0, 1};
 
     bnn_predict(&bnn, input, true);
