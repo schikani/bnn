@@ -22,14 +22,29 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-//#include "full_adder.h"
-#include "cars.h"
+//#include "bnn_utils.h"
+#include "full_adder.h"
+//#include "cars.h"
 
 int main(int argc, char *argv[])
 {
-//    full_adder_train();
-//    full_adder_predict();
-    get_cars_data();
+    full_adder_train();
+    full_adder_predict();
+//    get_cars_data();
+
+//    char *value = bnn_utils_dict_get_value("../dict", "Apple");
+//
+//    if (value)
+//        printf("value: %s", value);
+//    else
+//        printf("key not found!");
+//
+//    bnn_utils_dict_add_pair("../dict", "Thanos", "500");
+//    bnn_utils_dict_add_pair("../dict", "Shivang", "1996");
+//    bnn_utils_dict_add_pair("../dict", "Bhagya", "1998");
+//    bnn_utils_dict_add_pair("../dict", "Apple", "2000");
+
+
 
     return 0;
 }
