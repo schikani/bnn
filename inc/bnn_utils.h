@@ -35,9 +35,9 @@ bnn_data_t *bnn_utils_new_data(size_t n_inp, size_t n_out, size_t n_rows);
 
 dict_t *bnn_utils_dict_get(const char *dict_path);
 int bnn_utils_dict_write(dict_t *dict);
-char *bnn_utils_dict_get_value(const char *dict_path, const char *key);
-bool bnn_utils_dict_key_exists(const char *dict_path, const char *key);
-void bnn_utils_dict_add_pair(const char *dict_path, const char *key, const char *value);
+char *bnn_utils_dict_get_value(dict_t *dict, const char *key);
+bool bnn_utils_dict_key_exists(dict_t *dict, const char *key);
+void bnn_utils_dict_add_pair(dict_t *dict, const char *key, const char *value);
 int bnn_utils_dict_free(dict_t *dict);
 
 

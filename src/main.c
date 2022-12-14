@@ -29,8 +29,32 @@ SOFTWARE.
 int main(int argc, char *argv[])
 {
     full_adder_train();
-    full_adder_predict();
+//    full_adder_predict();
 //    get_cars_data();
+
+//    dict_t *dict = bnn_utils_dict_get("../dict");
+//
+//    printf("%s\n", bnn_utils_dict_get_value(dict, "Thanos"));
+//
+//    printf("%s\n", bnn_utils_dict_get_value(dict, "Buggati"));
+//
+//    bnn_utils_dict_add_pair(dict, "Buggati", "Veyron");
+//
+//    printf("%s\n", bnn_utils_dict_get_value(dict, "Buggati"));
+//
+//    printf("%s\n", bnn_utils_dict_get_value(dict, "Apple"));
+//
+//    bnn_utils_dict_add_pair(dict, "1", "0.989");
+//    bnn_utils_dict_add_pair(dict, "2", "9.6786");
+//    bnn_utils_dict_add_pair(dict, "0", "1");
+//
+//
+//
+//
+//    bnn_utils_dict_write(dict);
+//
+//    bnn_utils_dict_free(dict);
+
 
 //    char *value = bnn_utils_dict_get_value("../dict", "Apple");
 //
