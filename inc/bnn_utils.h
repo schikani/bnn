@@ -41,7 +41,7 @@ void bnn_utils_dict_add_pair(dict_t *dict, const char *key, const char *value);
 int bnn_utils_dict_free(dict_t *dict);
 
 
-void bnn_utils_parse(bnn_data_t *bnn_data, char *line, size_t row, const char *sep);
+void bnn_utils_parse(bnn_data_t *bnn_data, const char *line, size_t row, const char *sep);
 void bnn_utils_free_data(bnn_data_t *bnn_data);
 void bnn_utils_shuffle(bnn_data_t *bnn_data);
 bnn_data_t *bnn_utils_build(const char *path, size_t n_inp, size_t n_out, const char *sep);

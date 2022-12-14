@@ -95,7 +95,6 @@ char *bnn_utils_dict_get_value(dict_t *dict, const char *key)
 
 bool bnn_utils_dict_key_exists(dict_t *dict, const char *key)
 {
-//    dict_t *dict = bnn_utils_dict_get(dict_path);
 
     for (size_t i = 0; i < dict->size; i++)
     {
@@ -105,7 +104,6 @@ bool bnn_utils_dict_key_exists(dict_t *dict, const char *key)
             return true;
         }
     }
-    bnn_utils_dict_free(dict);
     return false;
 }
 
@@ -224,62 +222,60 @@ bnn_data_t *bnn_utils_new_data(size_t n_inp, size_t n_out, size_t n_rows)
     return bnn_data;
 }
 
-double *bnn_utils_pre_parse(bnn_data_t *bnn_data, char *line, const char *sep)
+void bnn_utils_pre_parse(const bnn_data_t *bnn_data, const char *line, const char *sep)
 {
+    char *l = (char *)line;
     size_t n_cols = bnn_data->n_inp + bnn_data->n_out;
-    double *col_max_count = (double *)calloc(n_cols, sizeof(double));
-    memset(col_max_count, 1, sizeof(double) * n_cols);
-    double val = 0.0f;
+
     char *t;
     for (size_t col = 0; col < n_cols; col++)
     {
-        char *token = strtok(col == 0 ? line: NULL, sep);
+        char *token = strtok(col == 0 ? l: NULL, sep);
 
-        val = strtod(token, &t);
-
-//        printf("%s\n", token);
+        strtod(token, &t);
 
         // Category found
         if (token == t)
         {
+
             // path + "_col_" + col_n
             char col_dict_path[strlen(bnn_data->path) + strlen("_col_") + 10];
             sprintf(col_dict_path, "%s_col_%ld", bnn_data->path, col);
             dict_t *dict = bnn_utils_dict_get(col_dict_path);
-            char cat_count[10];
-            sprintf(cat_count, "%.lf", col_max_count[col]);
-            bnn_utils_dict_add_pair(dict, token, cat_count);
-            bnn_utils_dict_write(dict);
-            bnn_utils_dict_free(dict);
-            col_max_count[col]++;
-
-//            printf("%s\n", token);
-
-        }
-        else
-        {
-            if (val > col_max_count[col])
+            printf("dict size: %zu\n", dict->size);
+            if (!bnn_utils_dict_key_exists(dict, token))
             {
-                col_max_count[col] = val;
+                char cat_count[10];
+                sprintf(cat_count, "%zu", dict->size);
+                printf("New key\n");
+                bnn_utils_dict_add_pair(dict, token, cat_count);
+                bnn_utils_dict_write(dict);
+                printf("%s\n", token);
             }
-        }
+            bnn_utils_dict_free(dict);
 
+        }
     }
-    return col_max_count;
 }
 
 
-void bnn_utils_parse(bnn_data_t *bnn_data, char *line, size_t row, const char *sep)
+void bnn_utils_parse(bnn_data_t *bnn_data, const char *line, size_t row, const char *sep)
 {
+//    char *l = (char *)line;
+    char *l = (char *)calloc(strlen(line) + 1, sizeof(char));
+    strcpy(l, line);
     size_t n_cols = bnn_data->n_inp + bnn_data->n_out;
-    double *col_max_count = bnn_utils_pre_parse(bnn_data, line, sep);
+//    printf("%zu\n", n_cols);
+    bnn_utils_pre_parse((const bnn_data_t *)bnn_data, line, sep);
+    printf("Data pre-parsing done!\n");
     double val = 0.0f;
     char *t;
     for (size_t col = 0; col < n_cols; col++)
     {
-        char *token = strtok(col == 0 ? line: NULL, sep);
+
+        char *token = strtok(col == 0 ? l: NULL, sep);
+
         val = strtod(token, &t);
-//        const double val = (double)(atof(token));
 
         // Category found
         if (token == t)
@@ -289,26 +285,30 @@ void bnn_utils_parse(bnn_data_t *bnn_data, char *line, size_t row, const char *s
             char col_dict_path[strlen(bnn_data->path) + strlen("_col_") + 10];
             sprintf(col_dict_path, "%s_col_%ld", bnn_data->path, col);
             dict_t *dict = bnn_utils_dict_get(col_dict_path);
-//            val = (double)(atof(bnn_utils_dict_get_value(dict, token)) / col_max_count[col] ? col_max_count[col] > 0 : 1);
-            val = (double)(atof(bnn_utils_dict_get_value(dict, token)) / col_max_count[col]);
+            val = (double)(atof(bnn_utils_dict_get_value(dict, token)));
+
+            printf("%lf\n", val);
+
 
             bnn_utils_dict_free(dict);
 
-//        printf("%s | %.lf\n", token, val);
-        }
-        // Number found
-        else
-        {
-            val /= col_max_count[col];
+
         }
 
-        printf("%lf\n", val);
 
         if (col < bnn_data->n_inp)
+        {
             bnn_data->inp[row][col] = val;
+        }
         else
+        {
             bnn_data->out[row][col - bnn_data->n_inp] = val;
+        }
+
+
+
     }
+    free(l);
 }
 
 void bnn_utils_free_data(bnn_data_t *bnn_data)
@@ -350,12 +350,14 @@ bnn_data_t *bnn_utils_build(const char *path, size_t n_inp, size_t n_out, const 
         exit(1);
     }
     size_t n_rows = bnn_utils_get_line_count(file);
+//    printf("%zu\n", n_rows);
     bnn_data_t *bnn_data = bnn_utils_new_data(n_inp, n_out, n_rows);
     bnn_data->path = path;
     for (size_t row = 0; row < n_rows; row++)
     {
         char *line = bnn_utils_read_line(file);
-        bnn_utils_parse(bnn_data, line, row, sep);
+//        printf("%s\n", line);
+        bnn_utils_parse(bnn_data, (const char *)line, row, sep);
         free(line);
     }
     fclose(file);

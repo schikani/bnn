@@ -23,14 +23,14 @@ SOFTWARE.
 */
 
 //#include "bnn_utils.h"
-#include "full_adder.h"
-//#include "cars.h"
+//#include "full_adder.h"
+#include "cars.h"
 
 int main(int argc, char *argv[])
 {
-    full_adder_train();
+//    full_adder_train();
 //    full_adder_predict();
-//    get_cars_data();
+    get_cars_data();
 
 //    dict_t *dict = bnn_utils_dict_get("../dict");
 //
